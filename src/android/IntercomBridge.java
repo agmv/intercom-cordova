@@ -34,8 +34,6 @@ import java.util.ArrayList;
 
 public class IntercomBridge extends CordovaPlugin {
 
-    private static final String CUSTOM_ATTRIBUTES = "custom_attributes";
-
     @Override protected void pluginInitialize() {
         cordova.getActivity().runOnUiThread(new Runnable() {
             @Override public void run() {
@@ -68,7 +66,7 @@ public class IntercomBridge extends CordovaPlugin {
         try {
             Context context = IntercomBridge.this.cordova.getActivity().getApplicationContext();
 
-            CordovaHeaderInterceptor.setCordovaVersion(context, "4.0.0");
+            CordovaHeaderInterceptor.setCordovaVersion(context, "3.2.2");
 
             switch (IntercomPushManager.getInstalledModuleType()) {
                 case GCM: {
@@ -120,6 +118,14 @@ public class IntercomBridge extends CordovaPlugin {
         reset {
             @Override void performAction(JSONArray args, CallbackContext callbackContext, CordovaInterface cordova) {
                 Intercom.client().reset();
+                callbackContext.success();
+            }
+        },
+        setSecureMode {
+            @Override void performAction(JSONArray args, CallbackContext callbackContext, CordovaInterface cordova) {
+                String hmac = args.optString(0);
+                String data = args.optString(1);
+                Intercom.client().setSecureMode(hmac, data);
                 callbackContext.success();
             }
         },
@@ -206,15 +212,7 @@ public class IntercomBridge extends CordovaPlugin {
         updateUser {
             @Override void performAction(JSONArray args, CallbackContext callbackContext, CordovaInterface cordova) {
                 Map<String, Object> attributes = IntercomBridge.mapFromJSON(args.optJSONObject(0));
-                UserAttributes.Builder builder = new UserAttributes.Builder();
-                Object customAttributes = attributes.get(CUSTOM_ATTRIBUTES);
-                if (customAttributes instanceof Map) {
-                    //noinspection unchecked
-                    builder.customAttributes.putAll((Map<? extends String, ?>) customAttributes);
-                }
-                attributes.remove(CUSTOM_ATTRIBUTES);
-                builder.attributes.putAll(attributes);
-                Intercom.client().updateUser(builder.build());
+                Intercom.client().updateUser(attributes);
                 callbackContext.success();
             }
         },
